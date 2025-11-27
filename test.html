@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Firebase Google Login & Register Test</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  </head>
+  <body>
+    <h1>Login / Register Google (Firebase)</h1>
+
+    <button id="loginBtn">Login with Google</button>
+
+    <div id="registerForm" style="display: none; margin-top: 20px;">
+      <h3>Lengkapi Data (Opsional)</h3>
+      <button id="registerBtn">Submit Register</button>
+    </div>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBlTNBTsDwplBVXket4TPUTMVlanb2HHxk",
+        authDomain: "auth-e820e.firebaseapp.com",
+        projectId: "auth-e820e",
+        storageBucket: "auth-e820e.firebasestorage.app",
+        messagingSenderId: "561674401648",
+        appId: "1:561674401648:web:f19d09199fea6f51f041b5",
+        measurementId: "G-8SV4DM3YLV",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+
+      let idTokenGlobal = "";
+      let uidGlobal = "";
+      let userDataGlobal = {};
+
+      // Login Google
+      document.getElementById("loginBtn").onclick = async function () {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+          const result = await firebase.auth().signInWithPopup(provider);
+          const user = result.user;
+
+          idTokenGlobal = await user.getIdToken();
+          uidGlobal = user.uid;
+
+          // Ambil data user, gunakan fallback jika kosong
+          const name = user.displayName || "User";
+          const email = user.email || "";
+          const picture = user.photoURL || "";
+
+          userDataGlobal = { name, email, picture };
+
+          console.log("ID TOKEN:", idTokenGlobal);
+          console.log("User Data:", userDataGlobal);
+
+          // Kirim login ke backend
+          const res = await fetch("http://localhost:8080/api/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + idTokenGlobal
+            },
+            body: JSON.stringify({
+              device_info: navigator.userAgent,
+              name: name,
+              email: email,
+              picture: picture
+            })
+          });
+
+          const data = await res.json();
+          console.log("Backend Response:", data);
+
+          if (res.status === 403 && data.canRegister) {
+            document.getElementById("registerForm").style.display = "block";
+          } else if (res.status === 200) {
+            alert(
+              "Login berhasil!\n\nUser Info:\n" +
+                JSON.stringify(data.user, null, 2)
+            );
+          } else {
+            alert("Login gagal: " + JSON.stringify(data));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error login: " + err.message);
+        }
+      };
+
+      // Submit register
+      document.getElementById("registerBtn").onclick = async function () {
+        if (!uidGlobal) {
+          alert("User UID tidak tersedia, login dulu.");
+          return;
+        }
+
+        try {
+          const res = await fetch("http://localhost:8080/api/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + idTokenGlobal
+            },
+            body: JSON.stringify({
+              uid: uidGlobal,
+              name: userDataGlobal.name,
+              email: userDataGlobal.email,
+              picture: userDataGlobal.picture
+            })
+          });
+
+          const data = await res.json();
+          console.log("Register Response:", data);
+
+          if (res.status === 200) {
+            alert("Register berhasil! Silakan login kembali.");
+            document.getElementById("registerForm").style.display = "none";
+          } else {
+            alert("Register gagal: " + JSON.stringify(data));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error register: " + err.message);
+        }
+      };
+    </script>
+  </body>
+</html>
