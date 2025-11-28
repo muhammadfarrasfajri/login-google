@@ -5,10 +5,12 @@ import (
 	"github.com/muhammadfarrasfajri/login-google/controllers"
 )
 
-func SetupRoutes(r *gin.Engine) {
-	// Login dengan Google
-	r.POST("/api/login", controllers.GoogleAuth)
+func SetupRoutes(r *gin.Engine, authController *controllers.AuthController) {
+	auth := r.Group("/api")
+	{
+		auth.POST("/register", authController.Register)
+		auth.POST("/login", authController.Login)
 
-	// Register user Google
-	r.POST("/api/register", controllers.RegisterGoogle)
+	}
 }
+

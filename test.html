@@ -1,19 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Firebase Google Login & Register Test</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <meta charset="UTF-8" />
+    <title>Test Google Register & Login</title>
   </head>
   <body>
-    <h1>Login / Register Google (Firebase)</h1>
+    <h2>Test Register & Login Backend (Google OAuth)</h2>
 
-    <button id="loginBtn">Login with Google</button>
+    <button id="btnRegister">Register with Google</button>
+    <button id="btnLogin">Login with Google</button>
 
-    <div id="registerForm" style="display: none; margin-top: 20px;">
-      <h3>Lengkapi Data (Opsional)</h3>
-      <button id="registerBtn">Submit Register</button>
-    </div>
+    <pre id="result"></pre>
+
+    <!-- Firebase v9 compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
 
     <script>
       const firebaseConfig = {
@@ -27,99 +28,54 @@
       };
 
       firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
 
-      let idTokenGlobal = "";
-      let uidGlobal = "";
-      let userDataGlobal = {};
-
-      // Login Google
-      document.getElementById("loginBtn").onclick = async function () {
+      async function loginGooglePopup() {
         const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await auth.signInWithPopup(provider);
+        return await result.user.getIdToken();
+      }
+
+      // -------------------- REGISTER ------------------------
+      document.getElementById("btnRegister").onclick = async function () {
         try {
-          const result = await firebase.auth().signInWithPopup(provider);
-          const user = result.user;
+          const idToken = await loginGooglePopup();
 
-          idTokenGlobal = await user.getIdToken();
-          uidGlobal = user.uid;
-
-          // Ambil data user, gunakan fallback jika kosong
-          const name = user.displayName || "User";
-          const email = user.email || "";
-          const picture = user.photoURL || "";
-
-          userDataGlobal = { name, email, picture };
-
-          console.log("ID TOKEN:", idTokenGlobal);
-          console.log("User Data:", userDataGlobal);
-
-          // Kirim login ke backend
-          const res = await fetch("http://localhost:8080/api/login", {
+          const res = await fetch("http://localhost:8080/api/register", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + idTokenGlobal
-            },
-            body: JSON.stringify({
-              device_info: navigator.userAgent,
-              name: name,
-              email: email,
-              picture: picture
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_token: idToken }),
           });
 
-          const data = await res.json();
-          console.log("Backend Response:", data);
-
-          if (res.status === 403 && data.canRegister) {
-            document.getElementById("registerForm").style.display = "block";
-          } else if (res.status === 200) {
-            alert(
-              "Login berhasil!\n\nUser Info:\n" +
-                JSON.stringify(data.user, null, 2)
-            );
-          } else {
-            alert("Login gagal: " + JSON.stringify(data));
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Error login: " + err.message);
+          const json = await res.json();
+          document.getElementById("result").innerText =
+            "RESPONSE REGISTER:\n\n" + JSON.stringify(json, null, 2);
+        } catch (e) {
+          document.getElementById("result").innerText = e.message;
         }
       };
 
-      // Submit register
-      document.getElementById("registerBtn").onclick = async function () {
-        if (!uidGlobal) {
-          alert("User UID tidak tersedia, login dulu.");
-          return;
-        }
-
+      // -------------------- LOGIN ------------------------
+      document.getElementById("btnLogin").onclick = async function () {
         try {
-          const res = await fetch("http://localhost:8080/api/register", {
+          const idToken = await loginGooglePopup();
+
+          const deviceInfo = navigator.userAgent;
+
+          const res = await fetch("http://localhost:8080/api/login", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + idTokenGlobal
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              uid: uidGlobal,
-              name: userDataGlobal.name,
-              email: userDataGlobal.email,
-              picture: userDataGlobal.picture
-            })
+              id_token: idToken,
+              device_info: deviceInfo,
+            }),
           });
 
-          const data = await res.json();
-          console.log("Register Response:", data);
-
-          if (res.status === 200) {
-            alert("Register berhasil! Silakan login kembali.");
-            document.getElementById("registerForm").style.display = "none";
-          } else {
-            alert("Register gagal: " + JSON.stringify(data));
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Error register: " + err.message);
+          const json = await res.json();
+          document.getElementById("result").innerText =
+            "RESPONSE LOGIN:\n\n" + JSON.stringify(json, null, 2);
+        } catch (e) {
+          document.getElementById("result").innerText = e.message;
         }
       };
     </script>
