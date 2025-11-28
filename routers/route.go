@@ -6,7 +6,7 @@ import (
 	"github.com/muhammadfarrasfajri/login-google/middleware"
 )
 
-func SetupRoutes(r *gin.Engine, authController *controllers.AuthController) {
+func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController) {
 
 	// ===========================
 	// AUTH ROUTES
@@ -29,17 +29,17 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController) {
 	protected := r.Group("/")
 	protected.Use(middleware.AuthMiddleware())
 
-	// // USER PROFILE ROUTE
-	// protected.GET("/profile", userController.Profile)
+	// USER PROFILE ROUTE
+	protected.GET("/profile", userController.Profile)
 
-	// // ===========================
-	// // ADMIN ONLY ROUTES
-	// // ===========================
-	// admin := protected.Group("/admin")
-	// admin.Use(middleware.AdminOnly())
-	// {
-	// 	admin.GET("/users", userController.GetAllUsers)
-	// 	admin.DELETE("/users/:id", userController.DeleteUser)
-	// 	admin.PUT("/users/:id", userController.UpdateUser)
-	// }
+	// ===========================
+	// ADMIN ONLY ROUTES
+	// ===========================
+	admin := protected.Group("/admin")
+	admin.Use(middleware.AdminOnly())
+	{
+		admin.GET("/users", userController.GetAllUsers)
+		admin.DELETE("/users/:id", userController.DeleteUser)
+		admin.PUT("/users/:id", userController.UpdateUser)
+	}
 }

@@ -59,7 +59,7 @@ func main() {
 	})
 
 	// ROUTES
-	routes.SetupRoutes(r, authController,)
+	routes.SetupRoutes(r, authController, userController)
 
 	// Run server
 	r.Run(":8080")

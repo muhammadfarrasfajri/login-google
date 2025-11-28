@@ -1,21 +1,22 @@
 package middleware
 
 import (
-    "net/http"
-    "strings"
-    "time"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/gin-gonic/gin"
-    "github.com/golang-jwt/jwt/v5"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var JWT_SECRET = []byte("SUPER_SECRET_KEY_UBAH_INI") // ganti nanti
 
 // Generate JWT Token
-func GenerateJWT(userID int, email string) (string, error) {
+func GenerateJWT(userID int, email string, role string) (string, error) {
     claims := jwt.MapClaims{
         "user_id": userID,
         "email":   email,
+        "role" : role,
         "exp":     time.Now().Add(48 * time.Hour).Unix(),
     }
 
