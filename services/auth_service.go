@@ -25,7 +25,7 @@ type AuthService struct {
 
 // --------------------------- REGISTER -----------------------------------
 
-func (s *AuthService) Register(idToken string) (*models.User, error) {
+func (s *AuthService) Register(idToken string, customName string) (*models.User, error) {
 	ctx := context.Background()
 
 	// 1. Verifikasi Firebase ID Token
@@ -36,13 +36,19 @@ func (s *AuthService) Register(idToken string) (*models.User, error) {
 
 	googleUID := token.UID
 	email := token.Claims["email"].(string)
-	name := token.Claims["name"].(string)
 	picture := token.Claims["picture"].(string)
 
 	// 2. Cek apakah sudah ada
 	existing, _ := s.UserRepo.FindByGoogleUID(googleUID)
 	if existing != nil {
 		return nil, errors.New("user already registered, please login")
+	}
+
+	name := customName
+	if name == "" {
+		if n, ok := token.Claims["name"].(string); ok {
+			name = n
+		}
 	}
 
 	// 3. Simpan user

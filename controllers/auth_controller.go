@@ -14,6 +14,7 @@ type AuthController struct {
 func (c *AuthController) Register(ctx *gin.Context) {
 	var body struct {
 		IDToken string `json:"id_token"`
+		Name    string `json:"name"`
 	}
 
 	if err := ctx.BindJSON(&body); err != nil {
@@ -21,7 +22,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	user, err := c.AuthService.Register(body.IDToken)
+	user, err := c.AuthService.Register(body.IDToken, body.Name)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
