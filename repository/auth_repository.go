@@ -11,7 +11,7 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
-	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture FROM users WHERE google_uid = ?", uid)
+	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture, role FROM users WHERE google_uid = ?", uid)
 
 	user := models.User{}
 	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
