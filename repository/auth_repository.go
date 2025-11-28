@@ -11,7 +11,7 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
-	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture FROM users WHERE google_uid = ?", uid)
+	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture, role FROM users WHERE google_uid = ?", uid)
 
 	user := models.User{}
 	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
@@ -32,11 +32,10 @@ func (r *UserRepository) Create(user models.User) error {
 }
 
 func (r *UserRepository) SaveLoginHistory(userID int, deviceInfo, ip string) error {
-    _, err := r.DB.Exec(`
+	_, err := r.DB.Exec(`
         INSERT INTO login_history (user_id, login_at, device_info, ip_address)
         VALUES (?, NOW(), ?, ?)
     `, userID, deviceInfo, ip)
 
-    return err
+	return err
 }
-

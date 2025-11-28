@@ -92,11 +92,10 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 		return nil, err
 	}
 
-	jwtToken, err := middleware.GenerateJWT(user.ID, user.Email, )
+	jwtToken, err := middleware.GenerateJWT(user.ID, user.Email, user.Role)
 	if err != nil {
-    return nil, err
-}
-
+		return nil, err
+	}
 
 	return map[string]interface{}{
 		"message": "login success",

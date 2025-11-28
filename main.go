@@ -30,10 +30,16 @@ func main() {
 		UserRepo:     userRepo,
 		FirebaseAuth: app,
 	}
+	userService := &services.UserService{
+		UserRepo: userRepo,
+	}
 
 	// Controller
 	authController := &controllers.AuthController{
 		AuthService: authService,
+	}
+	userController := &controllers.UserController{
+		UserService: userService,
 	}
 
 	// userController := &controllers.UserController{
@@ -59,7 +65,7 @@ func main() {
 	})
 
 	// ROUTES
-	routes.SetupRoutes(r, authController,)
+	routes.SetupRoutes(r, authController, userController)
 
 	// Run server
 	r.Run(":8080")

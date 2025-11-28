@@ -1,0 +1,72 @@
+package services
+
+import (
+	"errors"
+
+	"github.com/muhammadfarrasfajri/login-google/models"
+	"github.com/muhammadfarrasfajri/login-google/repository"
+)
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
+
+type UserService struct {
+	UserRepo *repository.UserRepository
+}
+
+// ------------------------- GET ALL USERS -----------------------------
+
+func (s *UserService) GetAll() ([]models.User, error) {
+	users, err := s.UserRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+// ------------------------- GET USER BY ID ----------------------------
+
+func (s *UserService) GetByID(id string) (*models.User, error) {
+	user, err := s.UserRepo.FindByID(id)
+	if err != nil || user == nil {
+		return nil, ErrUserNotFound
+	}
+	return user, nil
+}
+
+// --------------------------- UPDATE USER -----------------------------
+
+func (s *UserService) Update(id, name, email, avatarURL, role string) (*models.User, error) {
+
+	// cek apakah user ada
+	existing, err := s.UserRepo.FindByID(id)
+	if err != nil || existing == nil {
+		return nil, ErrUserNotFound
+	}
+
+	// update field
+	existing.Name = name
+	existing.Email = email
+	existing.Picture = avatarURL
+	existing.Role = role
+
+	err = s.UserRepo.Update(*existing)
+	if err != nil {
+		return nil, err
+	}
+
+	return existing, nil
+}
+
+// --------------------------- DELETE USER -----------------------------
+
+func (s *UserService) Delete(id string) error {
+	// cek user dulu
+	user, err := s.UserRepo.FindByID(id)
+	if err != nil || user == nil {
+		return ErrUserNotFound
+	}
+
+	return s.UserRepo.Delete(id)
+}
