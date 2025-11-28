@@ -30,16 +30,17 @@ func main() {
 		UserRepo:     userRepo,
 		FirebaseAuth: app,
 	}
+	userService := &services.UserService{
+		UserRepo: userRepo,
+	}
 
 	// Controller
 	authController := &controllers.AuthController{
 		AuthService: authService,
 	}
-
-	// userController := &controllers.UserController{
-	// 	UserRepo: userRepo,
-	// }
-
+	userController := &controllers.UserController{
+		UserService: userService,
+	}
 	// Init GIN
 	r := gin.Default()
 

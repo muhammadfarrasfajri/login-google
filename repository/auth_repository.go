@@ -32,11 +32,10 @@ func (r *UserRepository) Create(user models.User) error {
 }
 
 func (r *UserRepository) SaveLoginHistory(userID int, deviceInfo, ip string) error {
-    _, err := r.DB.Exec(`
+	_, err := r.DB.Exec(`
         INSERT INTO login_history (user_id, login_at, device_info, ip_address)
         VALUES (?, NOW(), ?, ?)
     `, userID, deviceInfo, ip)
 
-    return err
+	return err
 }
-

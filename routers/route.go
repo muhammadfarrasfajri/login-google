@@ -24,22 +24,29 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 	}
 
 	// ===========================
-	// PROTECTED ROUTES (user harus login)
+	// USER ROUTES (sementara NO AUTH untuk testing)
 	// ===========================
-	protected := r.Group("/")
-	protected.Use(middleware.AuthMiddleware())
-
-	// USER PROFILE ROUTE
-	protected.GET("/profile", userController.Profile)
+	user := r.Group("/users", middleware.AuthMiddleware()) // enable kalo sudah siap
+	// user := r.Group("/users") // sementara TANPA auth biar testing enak
 
 	// ===========================
 	// ADMIN ONLY ROUTES
 	// ===========================
-	admin := protected.Group("/admin")
-	admin.Use(middleware.AdminOnly())
 	{
-		admin.GET("/users", userController.GetAllUsers)
-		admin.DELETE("/users/:id", userController.DeleteUser)
-		admin.PUT("/users/:id", userController.UpdateUser)
+		user.GET("/", userController.GetAll)
+		user.GET("/:id", userController.GetByID)
+		user.PUT("/:id", userController.Update)
+		user.DELETE("/:id", userController.Delete)
+	}
+
+	// ===========================
+	// ADMIN ROUTES
+	// ===========================
+	admin := r.Group("/admin", middleware.AuthMiddleware(), middleware.AdminOnly())
+	// admin := r.Group("/admin") // sementara tanpa auth
+	{
+		admin.GET("/users", userController.GetAll)
+		admin.PUT("/users/:id", userController.Update)
+		admin.DELETE("/users/:id", userController.Delete)
 	}
 }
