@@ -14,7 +14,7 @@ func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
 	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture FROM users WHERE google_uid = ?", uid)
 
 	user := models.User{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture)
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
 
 	if err == sql.ErrNoRows {
 		return nil, nil

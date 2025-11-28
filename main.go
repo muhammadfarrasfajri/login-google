@@ -13,32 +13,54 @@ import (
 )
 
 func main() {
+
+	// Init Firebase & MySQL
 	config.InitFirebase()
 	database.ConnectMySQL()
 
 	app, _ := config.FirebaseApp.Auth(context.Background())
 
-	userRepo := &repository.UserRepository{DB: database.DB}
-	authService := &services.AuthService{UserRepo: userRepo, FirebaseAuth: app}
-	authController := &controllers.AuthController{AuthService: authService}
+	// Repository
+	userRepo := &repository.UserRepository{
+		DB: database.DB,
+	}
 
+	// Services
+	authService := &services.AuthService{
+		UserRepo:     userRepo,
+		FirebaseAuth: app,
+	}
+
+	// Controller
+	authController := &controllers.AuthController{
+		AuthService: authService,
+	}
+
+	userController := &controllers.UserController{
+		UserRepo: userRepo,
+	}
+
+	// Init GIN
 	r := gin.Default()
-	
-	 r.Use(func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 
-        if c.Request.Method == "OPTIONS" {
-            c.AbortWithStatus(204)
-            return
-        }
+	// CORS
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 
-        c.Next()
-    })
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
 
-	routes.SetupRoutes(r, authController)
+		c.Next()
+	})
 
+	// ROUTES
+	routes.SetupRoutes(r, authController, userController)
+
+	// Run server
 	r.Run(":8080")
 }
