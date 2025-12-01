@@ -48,7 +48,6 @@ func (c *UserController) Update(ctx *gin.Context) {
 	var body struct {
 		Name      string `json:"name"`
 		Email     string `json:"email"`
-		AvatarURL string `json:"avatar_url"`
 		Role      string `json:"role"`
 	}
 
@@ -57,7 +56,7 @@ func (c *UserController) Update(ctx *gin.Context) {
 		return
 	}
 
-	user, err := c.UserService.Update(id, body.Name, body.Email, body.AvatarURL, body.Role)
+	user, err := c.UserService.Update(id, body.Name, body.Email, body.Role)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

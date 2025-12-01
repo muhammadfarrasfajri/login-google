@@ -54,10 +54,9 @@ func (r *UserRepository) Update(user models.User) error {
         UPDATE users SET 
             name = ?, 
             email = ?, 
-            picture = ?, 
             role = ?
         WHERE id = ?
-    `, user.Name, user.Email, user.Picture, user.Role, user.ID)
+    `, user.Name, user.Email, user.Role, user.ID)
 
 	return err
 }

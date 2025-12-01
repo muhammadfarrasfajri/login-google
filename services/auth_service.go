@@ -3,10 +3,8 @@ package services
 import (
 	"context"
 	"errors"
-	"time"
 
 	firebase "firebase.google.com/go/auth"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/muhammadfarrasfajri/login-google/middleware"
 	"github.com/muhammadfarrasfajri/login-google/models"
 	"github.com/muhammadfarrasfajri/login-google/repository"
@@ -118,20 +116,4 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 		"token":   jwtToken,
 		"user":    user,
 	}, nil
-}
-
-// -------------------------- JWT -----------------------------------------
-
-func (s *AuthService) GenerateJWT(userID string, email string, role string) (string, error) {
-
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"email":   email,
-		"role":    role,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(s.JWTSecret))
 }
