@@ -25,7 +25,7 @@ type AuthService struct {
 
 // --------------------------- REGISTER -----------------------------------
 
-func (s *AuthService) Register(idToken string, customName string) (*models.User, error) {
+func (s *AuthService) Register(idToken string, customName string, loginForm string) (*models.User, error) {
 	ctx := context.Background()
 
 	// 1. Verifikasi Firebase ID Token
@@ -35,15 +35,20 @@ func (s *AuthService) Register(idToken string, customName string) (*models.User,
 	}
 
 	googleUID := token.UID
-	email := token.Claims["email"].(string)
-	picture := token.Claims["picture"].(string)
 
-	// 2. Cek apakah sudah ada
+	email, _ := token.Claims["email"].(string)
+	picture, _ := token.Claims["picture"].(string)
+
+	// Default role
+	role := "user"
+
+	// 2. Cek apakah user sudah ada
 	existing, _ := s.UserRepo.FindByGoogleUID(googleUID)
 	if existing != nil {
 		return nil, errors.New("user already registered, please login")
 	}
 
+	// 3. Tentukan nama
 	name := customName
 	if name == "" {
 		if n, ok := token.Claims["name"].(string); ok {
@@ -51,12 +56,23 @@ func (s *AuthService) Register(idToken string, customName string) (*models.User,
 		}
 	}
 
-	// 3. Simpan user
+	// 4. Tentukan role dari loginForm
+	switch loginForm {
+	case "web":
+		role = "admin"
+	case "android":
+		role = "user"
+	default:
+		role = "user"
+	}
+
+	// 5. Simpan user
 	newUser := models.User{
 		GoogleUID: googleUID,
 		Name:      name,
 		Email:     email,
 		Picture:   picture,
+		Role:      role,
 	}
 
 	err = s.UserRepo.Create(newUser)

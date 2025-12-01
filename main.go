@@ -30,6 +30,7 @@ func main() {
 		UserRepo:     userRepo,
 		FirebaseAuth: app,
 	}
+
 	userService := &services.UserService{
 		UserRepo: userRepo,
 	}
@@ -41,6 +42,7 @@ func main() {
 	userController := &controllers.UserController{
 		UserService: userService,
 	}
+
 	// Init GIN
 	r := gin.Default()
 
@@ -55,7 +57,7 @@ func main() {
 			c.AbortWithStatus(204)
 			return
 		}
-
+		
 		c.Next()
 	})
 

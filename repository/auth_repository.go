@@ -25,8 +25,8 @@ func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
 
 func (r *UserRepository) Create(user models.User) error {
 	_, err := r.DB.Exec(
-		"INSERT INTO users (google_uid, name, email, picture) VALUES (?, ?, ?, ?)",
-		user.GoogleUID, user.Name, user.Email, user.Picture,
+		"INSERT INTO users (google_uid, name, email, picture, role) VALUES (?, ?, ?, ?, ?)",
+		user.GoogleUID, user.Name, user.Email, user.Picture, user.Role,
 	)
 	return err
 }
