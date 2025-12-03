@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/muhammadfarrasfajri/login-google/controllers"
 	"github.com/muhammadfarrasfajri/login-google/middleware"
@@ -16,7 +18,7 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
 		auth.POST("/logout", middleware.AuthMiddleware(), func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"message": "logout success",
 			})
 		})

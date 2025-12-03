@@ -11,31 +11,27 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
-	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture, role FROM users WHERE google_uid = ?", uid)
-
+	sqlQuery := `SELECT id, google_uid, name, email, picture, role FROM users WHERE google_uid = ? LIMIT 1`
+	row := r.DB.QueryRow(sqlQuery, uid)
 	user := models.User{}
 	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
-
-	if err == sql.ErrNoRows {
+	if err != nil {
+		if err == sql.ErrNoRows {
 		return nil, nil
 	}
-
+	return nil, err
+}
 	return &user, err
 }
 
 func (r *UserRepository) Create(user models.User) error {
-	_, err := r.DB.Exec(
-		"INSERT INTO users (google_uid, name, email, picture, role) VALUES (?, ?, ?, ?, ?)",
-		user.GoogleUID, user.Name, user.Email, user.Picture, user.Role,
-	)
+	sqlQuery := `INSERT INTO users (google_uid, name, email, picture, role) VALUES (?, ?, ?, ?, ?)`
+	_, err := r.DB.Exec(sqlQuery, user.GoogleUID, user.Name, user.Email, user.Picture, user.Role)
 	return err
 }
 
 func (r *UserRepository) SaveLoginHistory(userID int, deviceInfo, ip string) error {
-	_, err := r.DB.Exec(`
-        INSERT INTO login_history (user_id, login_at, device_info, ip_address)
-        VALUES (?, NOW(), ?, ?)
-    `, userID, deviceInfo, ip)
-
+	sqlQuery := `INSERT INTO login_history (user_id, login_at, device_info, ip_address) VALUES (?, NOW(), ?, ?)`
+	_, err := r.DB.Exec(sqlQuery, userID, deviceInfo, ip)
 	return err
 }

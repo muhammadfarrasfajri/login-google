@@ -42,7 +42,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
     }
 
     if err := ctx.BindJSON(&req); err != nil {
-        ctx.JSON(400, gin.H{"error": "invalid request"})
+        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
         return
     }
 
@@ -50,9 +50,9 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
     result, err := c.AuthService.Login(req.IDToken, req.DeviceInfo, ip)
     if err != nil {
-        ctx.JSON(400, gin.H{"error": err.Error()})
+        ctx.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
         return
     }
 
-    ctx.JSON(200, result)
+    ctx.JSON(http.StatusOK, result)
 }

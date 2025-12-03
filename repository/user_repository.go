@@ -9,7 +9,8 @@ import (
 // --------------------------- GET ALL USERS -----------------------------------
 
 func (r *UserRepository) GetAll() ([]models.User, error) {
-	rows, err := r.DB.Query("SELECT id, google_uid, name, email, picture, role FROM users")
+	sqlQuery := `SELECT id, google_uid, name, email, picture, role FROM users`
+	rows, err := r.DB.Query(sqlQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +26,9 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 		}
 		users = append(users, u)
 	}
-
+	if err = rows.Err(); err != nil {
+        return nil, err
+    }
 	return users, nil
 }
 
