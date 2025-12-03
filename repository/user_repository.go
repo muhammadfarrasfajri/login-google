@@ -8,7 +8,7 @@ import (
 
 // --------------------------- GET ALL USERS -----------------------------------
 
-func (r *UserRepository) GetAll() ([]models.User, error) {
+func (r *UserRepository) GetAll() ([]models.BaseUser, error) {
 	sqlQuery := `SELECT id, google_uid, name, email, picture, role FROM users`
 	rows, err := r.DB.Query(sqlQuery)
 	if err != nil {
@@ -16,11 +16,11 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 	}
 	defer rows.Close()
 
-	users := []models.User{}
+	users := []models.BaseUser{}
 
 	for rows.Next() {
-		u := models.User{}
-		err := rows.Scan(&u.ID, &u.GoogleUID, &u.Name, &u.Email, &u.Picture, &u.Role)
+		u := models.BaseUser{}
+		err := rows.Scan(&u.ID, &u.GoogleUID, &u.Name, &u.Email, &u.GooglePicture,&u.ProfilePicture, &u.Role)
 		if err != nil {
 			return nil, err
 		}
@@ -34,14 +34,14 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 // --------------------------- FIND BY ID --------------------------------------
 
-func (r *UserRepository) FindByID(id string) (*models.User, error) {
+func (r *UserRepository) FindByID(id string) (*models.BaseUser, error) {
 	row := r.DB.QueryRow(`
         SELECT id, google_uid, name, email, picture, role
         FROM users WHERE id = ?
     `, id)
 
-	user := models.User{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
+	user := models.BaseUser{}
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.GooglePicture,&user.ProfilePicture, &user.Role)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -52,7 +52,7 @@ func (r *UserRepository) FindByID(id string) (*models.User, error) {
 
 // --------------------------- UPDATE USER -------------------------------------
 
-func (r *UserRepository) Update(user models.User) error {
+func (r *UserRepository) Update(user models.BaseUser) error {
 	_, err := r.DB.Exec(`
         UPDATE users SET 
             name = ?, 

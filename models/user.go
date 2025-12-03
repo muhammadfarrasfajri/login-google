@@ -1,10 +1,11 @@
 package models
 
-type User struct {
-	ID        int
-	GoogleUID string
-	Name      string
-	Email     string
-	Picture   string
-	Role      string
+type BaseUser struct {
+	ID             int
+	GoogleUID      string
+	Name           string
+	Email          string
+	GooglePicture  string
+	ProfilePicture string
+	Role           string
 }

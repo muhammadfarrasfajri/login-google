@@ -18,27 +18,40 @@ func main() {
 	config.InitFirebase()
 	database.ConnectMySQL()
 
-	app, _ := config.FirebaseApp.Auth(context.Background())
+	appAdmin, _ := config.FirebaseAppAdmin.Auth(context.Background())
+	appUser, _ := config.FirebaseAppUser.Auth(context.Background())
 
 	// Repository
+	adminRepo := &repository.AdminRepository{
+		DB: database.DB,
+	}
 	userRepo := &repository.UserRepository{
 		DB: database.DB,
 	}
 
+
 	// Services
-	authService := &services.AuthService{
-		UserRepo:     userRepo,
-		FirebaseAuth: app,
+	authAdminService := &services.AuthService{
+		Repo: adminRepo,
+		FirebaseAuth: appAdmin,
+	}
+	authUserService := &services.AuthService{
+		Repo: userRepo,
+		FirebaseAuth: appUser,
 	}
 
 	userService := &services.UserService{
 		UserRepo: userRepo,
 	}
-
+	
 	// Controller
-	authController := &controllers.AuthController{
-		AuthService: authService,
+	authAdminController := &controllers.AuthController{
+		AuthService: authAdminService,
 	}
+	authUserController := &controllers.AuthController{
+		AuthService: authUserService,
+	}
+
 	userController := &controllers.UserController{
 		UserService: userService,
 	}
@@ -62,7 +75,7 @@ func main() {
 	})
 
 	// ROUTES
-	routes.SetupRoutes(r, authController, userController)
+	routes.SetupRoutes(r, authAdminController, authUserController, userController)
 
 	// Run server
 	r.Run(":8080")

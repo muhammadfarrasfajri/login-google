@@ -16,14 +16,14 @@ var (
 )
 
 type AuthService struct {
-	UserRepo     *repository.UserRepository
+	Repo     repository.AuthRepository
 	FirebaseAuth *firebase.Client
 	JWTSecret    string
 }
 
 // --------------------------- REGISTER -----------------------------------
 
-func (s *AuthService) Register(idToken string, customName string, loginForm string) (*models.User, error) {
+func (s *AuthService) Register(idToken string, customName string) (*models.BaseUser, error) {
 	ctx := context.Background()
 
 	// 1. Verifikasi Firebase ID Token
@@ -31,17 +31,13 @@ func (s *AuthService) Register(idToken string, customName string, loginForm stri
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
-
 	googleUID := token.UID
 
 	email, _ := token.Claims["email"].(string)
-	picture, _ := token.Claims["picture"].(string)
-
-	// Default role
-	role := "user"
+	googlePicture, _ := token.Claims["picture"].(string)
 
 	// 2. Cek apakah user sudah ada
-	existing, _ := s.UserRepo.FindByGoogleUID(googleUID)
+	existing, _ := s.Repo.FindByGoogleUID(googleUID)
 	if existing != nil {
 		return nil, errors.New("user already registered, please login")
 	}
@@ -53,27 +49,16 @@ func (s *AuthService) Register(idToken string, customName string, loginForm stri
 			name = n
 		}
 	}
-
-	// 4. Tentukan role dari loginForm
-	switch loginForm {
-	case "web":
-		role = "admin"
-	case "android":
-		role = "user"
-	default:
-		role = "user"
-	}
-
+	
 	// 5. Simpan user
-	newUser := models.User{
+	newUser := models.BaseUser{
 		GoogleUID: googleUID,
 		Name:      name,
 		Email:     email,
-		Picture:   picture,
-		Role:      role,
+		GooglePicture:   googlePicture,
 	}
 
-	err = s.UserRepo.Create(newUser)
+	err = s.Repo.Create(newUser)
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +80,13 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	googleUID := token.UID
 
 	// 2. Cek user di DB
-	user, err := s.UserRepo.FindByGoogleUID(googleUID)
+	user, err := s.Repo.FindByGoogleUID(googleUID)
 	if err != nil || user == nil {
 		return nil, ErrUserNotRegistered
 	}
 
 	// 3. Simpan aktivitas login
-	err = s.UserRepo.SaveLoginHistory(user.ID, deviceInfo, ip)
+	err = s.Repo.SaveLoginHistory(user.ID, deviceInfo, ip)
 	if err != nil {
 		return nil, err
 	}

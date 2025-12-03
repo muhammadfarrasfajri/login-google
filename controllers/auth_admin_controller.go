@@ -4,18 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/muhammadfarrasfajri/login-google/services"
 )
 
-type AuthController struct {
-	AuthService *services.AuthService
-}
-
-func (c *AuthController) Register(ctx *gin.Context) {
+func (c *AuthController) RegisterAdmin(ctx *gin.Context) {
 	var body struct {
 		IDToken string `json:"id_token"`
 		Name    string `json:"name"`
-		LoginForm string `json:"loginform"`
 	}
 
 	if err := ctx.BindJSON(&body); err != nil {
@@ -23,7 +17,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	user, err := c.AuthService.Register(body.IDToken, body.Name, body.LoginForm)
+	admin, err := c.AuthService.Register(body.IDToken, body.Name)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -31,11 +25,11 @@ func (c *AuthController) Register(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Register success",
-		"user":    user,
+		"user":    admin,
 	})
 }
 
-func (c *AuthController) Login(ctx *gin.Context) {
+func (c *AuthController) LoginAdmin(ctx *gin.Context) {
     var req struct {
         IDToken    string `json:"id_token"`
         DeviceInfo string `json:"device_info"`

@@ -1,6 +1,6 @@
 package models
 
-type LoginHistory struct {
+type BaseLoginHistory struct {
 	ID        int
 	UserID    string
 	LoginTime string

@@ -17,7 +17,7 @@ type UserService struct {
 
 // ------------------------- GET ALL USERS -----------------------------
 
-func (s *UserService) GetAll() ([]models.User, error) {
+func (s *UserService) GetAll() ([]models.BaseUser, error) {
 	users, err := s.UserRepo.GetAll()
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (s *UserService) GetAll() ([]models.User, error) {
 
 // ------------------------- GET USER BY ID ----------------------------
 
-func (s *UserService) GetByID(id string) (*models.User, error) {
+func (s *UserService) GetByID(id string) (*models.BaseUser, error) {
 	user, err := s.UserRepo.FindByID(id)
 	if err != nil || user == nil {
 		return nil, ErrUserNotFound
@@ -37,7 +37,7 @@ func (s *UserService) GetByID(id string) (*models.User, error) {
 
 // --------------------------- UPDATE USER -----------------------------
 
-func (s *UserService) Update(id, name, email, role string) (*models.User, error) {
+func (s *UserService) Update(id, name, email, role string) (*models.BaseUser, error) {
 
 	// cek apakah user ada
 	existing, err := s.UserRepo.FindByID(id)

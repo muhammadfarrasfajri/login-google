@@ -41,11 +41,14 @@
         try {
           const idToken = await loginGooglePopup();
 
-          const res = await fetch("http://localhost:8080/api/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id_token: idToken }),
-          });
+          const res = await fetch(
+            "http://localhost:8080/api/auth/admin/register",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id_token: idToken }),
+            }
+          );
 
           const json = await res.json();
           document.getElementById("result").innerText =
@@ -62,7 +65,7 @@
 
           const deviceInfo = navigator.userAgent;
 
-          const res = await fetch("http://localhost:8080/api/login", {
+          const res = await fetch("http://localhost:8080/api/auth/admin/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

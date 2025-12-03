@@ -8,16 +8,23 @@ import (
 	"github.com/muhammadfarrasfajri/login-google/middleware"
 )
 
-func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, userController *controllers.UserController) {
+func SetupRoutes(r *gin.Engine, authAdminController *controllers.AuthController,authUserController *controllers.AuthController, userController *controllers.UserController) {
 
 	// ===========================
-	// AUTH ROUTES
+	// AUTH ROUTES USERS
 	// ===========================
-	auth := r.Group("/api")
+	auth := r.Group("/api/auth")
 	{
-		auth.POST("/register", authController.Register)
-		auth.POST("/login", authController.Login)
-		auth.POST("/logout", middleware.AuthMiddleware(), func(c *gin.Context) {
+		auth.POST("/admin/register", authAdminController.RegisterAdmin)
+		auth.POST("/admin/login", authAdminController.LoginAdmin)
+		auth.POST("/admin/logout", middleware.AuthMiddleware(), func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "logout success",
+			})
+		})
+		auth.POST("/user/register", authUserController.RegisterUser)
+		auth.POST("/user/login", authUserController.LoginUser)
+		auth.POST("/user/logout", middleware.AuthMiddleware(), func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "logout success",
 			})
@@ -32,6 +39,7 @@ func SetupRoutes(r *gin.Engine, authController *controllers.AuthController, user
 	// ===========================
 	// ADMIN ROUTES
 	// ===========================
+
 	admin := r.Group("/admin")
 	{
 		admin.GET("/users", userController.GetAll)
