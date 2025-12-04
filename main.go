@@ -29,7 +29,6 @@ func main() {
 		DB: database.DB,
 	}
 
-
 	// Services
 	authAdminService := &services.AuthService{
 		Repo: adminRepo,
