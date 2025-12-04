@@ -53,10 +53,10 @@ func (s *AuthService) Register(idToken string, customName string) (*models.User,
 
 	// 3. Simpan user
 	newUser := models.User{
-		GoogleUID: googleUID,
-		Name:      name,
-		Email:     email,
-		Picture:   picture,
+		GoogleUID:      googleUID,
+		Name:           name,
+		Email:          email,
+		Google_picture: picture,
 	}
 
 	err = s.UserRepo.Create(newUser)

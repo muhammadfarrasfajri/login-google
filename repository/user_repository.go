@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/muhammadfarrasfajri/login-google/models"
 )
@@ -9,7 +10,8 @@ import (
 // --------------------------- GET ALL USERS -----------------------------------
 
 func (r *UserRepository) GetAll() ([]models.User, error) {
-	rows, err := r.DB.Query("SELECT id, google_uid, name, email, picture, role FROM users")
+	sqlQuery := `SELECT id, google_uid, name, email, google_picture, role, profile_picture FROM users`
+	rows, err := r.DB.Query(sqlQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -19,13 +21,15 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 	for rows.Next() {
 		u := models.User{}
-		err := rows.Scan(&u.ID, &u.GoogleUID, &u.Name, &u.Email, &u.Picture, &u.Role)
+		err := rows.Scan(&u.ID, &u.GoogleUID, &u.Name, &u.Email, &u.Google_picture, &u.Role, &u.Profile_picture)
 		if err != nil {
 			return nil, err
 		}
 		users = append(users, u)
 	}
-
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return users, nil
 }
 
@@ -33,14 +37,15 @@ func (r *UserRepository) GetAll() ([]models.User, error) {
 
 func (r *UserRepository) FindByID(id string) (*models.User, error) {
 	row := r.DB.QueryRow(`
-        SELECT id, google_uid, name, email, picture, role
+        SELECT id, google_uid, name, email, google_picture, role, profile_picture
         FROM users WHERE id = ?
     `, id)
 
 	user := models.User{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Google_picture, &user.Role, &user.Profile_picture)
 
 	if err == sql.ErrNoRows {
+		fmt.Println("No user found with ID:", err)
 		return nil, nil
 	}
 
@@ -54,10 +59,10 @@ func (r *UserRepository) Update(user models.User) error {
         UPDATE users SET 
             name = ?, 
             email = ?, 
-            picture = ?, 
-            role = ?
+            role = ?,
+			profile_picture = ?
         WHERE id = ?
-    `, user.Name, user.Email, user.Picture, user.Role, user.ID)
+    `, user.Name, user.Email, user.Role, user.Profile_picture, user.ID)
 
 	return err
 }
@@ -74,4 +79,13 @@ func (r *UserRepository) Delete(id string) error {
 	// Baru hapus user
 	_, err = r.DB.Exec("DELETE FROM users WHERE id = ?", id)
 	return err
+}
+
+// --------------------------- UPDATE PHOTO URL -------------------------------------
+func (r *UserRepository) UpdatePhotoURL(userID int, url string) error {
+	// Update kolom avatar_url di tabel users
+	_, err := r.DB.Exec("UPDATE users SET profile_picture = ? WHERE id = ?", url, userID)
+	fmt.Println("errornya:", err)
+	return err
+
 }

@@ -11,23 +11,22 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) FindByGoogleUID(uid string) (*models.User, error) {
-	row := r.DB.QueryRow("SELECT id, google_uid, name, email, picture, role FROM users WHERE google_uid = ?", uid)
-
+	sqlQuery := `SELECT id, google_uid, name, email, google_picture, role FROM users WHERE google_uid = ? LIMIT 1`
+	row := r.DB.QueryRow(sqlQuery, uid)
 	user := models.User{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Picture, &user.Role)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.Google_picture, &user.Role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
 	}
-
 	return &user, err
 }
 
 func (r *UserRepository) Create(user models.User) error {
-	_, err := r.DB.Exec(
-		"INSERT INTO users (google_uid, name, email, picture) VALUES (?, ?, ?, ?)",
-		user.GoogleUID, user.Name, user.Email, user.Picture,
-	)
+	sqlQuery := `INSERT INTO users (google_uid, name, email, google_picture, role) VALUES (?, ?, ?, ?, ?)`
+	_, err := r.DB.Exec(sqlQuery, user.GoogleUID, user.Name, user.Email, user.Google_picture, user.Role)
 	return err
 }
 

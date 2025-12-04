@@ -1,14 +1,22 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/muhammadfarrasfajri/login-google/repository"
 	"github.com/muhammadfarrasfajri/login-google/services"
 )
 
 type UserController struct {
 	UserService *services.UserService
+	Repo        *repository.UserRepository
 }
 
 // GET /users
@@ -42,25 +50,38 @@ func (c *UserController) GetByID(ctx *gin.Context) {
 }
 
 // PUT /users/:id
+// PUT /users/:id
 func (c *UserController) Update(ctx *gin.Context) {
 	id := ctx.Param("id")
 
-	var body struct {
-		Name      string `json:"name"`
-		Email     string `json:"email"`
-		AvatarURL string `json:"avatar_url"`
-		Role      string `json:"role"`
+	// Ambil form-data
+	name := ctx.PostForm("name")
+	email := ctx.PostForm("email")
+	role := ctx.PostForm("role")
+
+	// Ambil file kalau ada
+	file, _ := ctx.FormFile("profile_picture")
+	var filename string
+	if file != nil {
+		filename = fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
+		savePath := fmt.Sprintf("public/uploads/images/%s", filename)
+		if err := ctx.SaveUploadedFile(file, savePath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+			return
+		}
 	}
 
-	if err := ctx.BindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
-
-	user, err := c.UserService.Update(id, body.Name, body.Email, body.AvatarURL, body.Role)
+	// Kirim ke service/repo
+	user, err := c.UserService.Update(id, name, email, role, filename)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Format URL foto
+	if user.Profile_picture != "" && !strings.HasPrefix(user.Profile_picture, "http") {
+		user.Profile_picture = fmt.Sprintf("%s/uploads/images/%s",
+			os.Getenv("BASE_URL"), user.Profile_picture)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -81,5 +102,43 @@ func (c *UserController) Delete(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Delete success",
+	})
+}
+
+func (uc *UserController) UploadPhoto(c *gin.Context) {
+	file, err := c.FormFile("photo")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	// Buat nama file unik
+	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
+	savePath := fmt.Sprintf("public/uploads/images/%s", filename)
+
+	// Simpan file
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
+	// URL publik
+	publicURL := fmt.Sprintf("/public/uploads/images/%s", filename)
+
+	// Simpan ke database via repository (contoh)
+	userID, err := strconv.Atoi(c.PostForm("user_id"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": "user_id must be an integer"})
+		return
+	}
+
+	if err := uc.Repo.UpdatePhotoURL(userID, publicURL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save URL in DB"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Photo uploaded successfully",
+		"url":     publicURL,
 	})
 }
