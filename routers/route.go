@@ -40,10 +40,12 @@ func SetupRoutes(r *gin.Engine, authAdminController *controllers.AuthController,
 	// ADMIN ROUTES
 	// ===========================
 
+
 	admin := r.Group("/admin")
+	// admin := r.Group("/admin") // sementara tanpa auth
 	{
-		admin.GET("/users", userController.GetAll)
 		admin.GET("/:id", userController.GetByID)
+		admin.GET("/users", userController.GetAll)
 		admin.PATCH("/users/:id", userController.Update)
 		admin.DELETE("/users/:id", userController.Delete)
 	}

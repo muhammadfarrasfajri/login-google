@@ -73,10 +73,13 @@ func main() {
 
 	userController := &controllers.UserController{
 		UserService: userService,
+		Repo:        userRepo,
 	}
 
 	// Init GIN
 	r := gin.Default()
+
+	r.Static("/public", "./public")
 
 	// CORS
 	r.Use(func(c *gin.Context) {

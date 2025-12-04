@@ -37,7 +37,7 @@ func (s *UserService) GetByID(id string) (*models.BaseUser, error) {
 
 // --------------------------- UPDATE USER -----------------------------
 
-func (s *UserService) Update(id, name, email, role string) (*models.BaseUser, error) {
+func (s *UserService) Update(id, name, email, role, ProfilePicture string) (*models.BaseUser, error) {
 
 	// cek apakah user ada
 	existing, err := s.UserRepo.FindByID(id)
@@ -49,6 +49,7 @@ func (s *UserService) Update(id, name, email, role string) (*models.BaseUser, er
 	existing.Name = name
 	existing.Email = email
 	existing.Role = role
+	existing.GooglePicture = ProfilePicture
 
 	err = s.UserRepo.Update(*existing)
 	if err != nil {

@@ -1,4 +1,6 @@
 firebase-key-user.json
 firebase-key-admin.json
+public/uploads/images/
+public/uploads/images/*
 
 .env
