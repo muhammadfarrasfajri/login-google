@@ -8,4 +8,5 @@ type BaseUser struct {
 	GooglePicture  string
 	ProfilePicture string
 	Role           string
+	IsLoggedIn     int
 }

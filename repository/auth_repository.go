@@ -6,4 +6,5 @@ type AuthRepository interface {
 	FindByGoogleUID(uid string) (*models.BaseUser, error)
 	Create(user models.BaseUser) error
 	SaveLoginHistory(userID int, deviceInfo, ip string) error
+	UpdateLoginStatus(id int, status int) error
 }

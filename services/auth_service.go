@@ -18,7 +18,7 @@ var (
 type AuthService struct {
 	Repo     repository.AuthRepository
 	FirebaseAuth *firebase.Client
-	JWTSecret    string
+	JWTSecret    *middleware.JWTManager
 }
 
 // --------------------------- REGISTER -----------------------------------
@@ -85,13 +85,30 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 		return nil, ErrUserNotRegistered
 	}
 
-	// 3. Simpan aktivitas login
+	// 3. Cek user login
+	if user.IsLoggedIn == 1 {
+		return nil, errors.New("user already login")
+	}
+
+	// 4. Update status login
+	if err := s.Repo.UpdateLoginStatus(user.ID, 1); err != nil {
+		return nil, err
+	}
+
+	// 5. Simpan aktivitas login
 	err = s.Repo.SaveLoginHistory(user.ID, deviceInfo, ip)
 	if err != nil {
 		return nil, err
 	}
 
-	jwtToken, err := middleware.GenerateJWT(user.ID, user.Email, user.Role)
+	//6. Generate Access token
+	jwtToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	//7. Generate Referesh Token
+	refreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +116,7 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	return map[string]interface{}{
 		"message": "login success",
 		"token":   jwtToken,
+		"refresh": refreshToken,
 		"user":    user,
 	}, nil
 }

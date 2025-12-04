@@ -9,22 +9,44 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var JWT_SECRET = []byte("SUPER_SECRET_KEY_UBAH_INI") // ganti nanti
+
+type JWTManager struct {
+	AccessSecret  []byte
+	RefreshSecret []byte
+}
+
+func NewJWTManager(accessSecret, refreshSecret string) *JWTManager {
+	return &JWTManager{
+		AccessSecret:  []byte(accessSecret),
+		RefreshSecret: []byte(refreshSecret),
+	}
+}
 
 // Generate JWT Token
-func GenerateJWT(userID int, email string, role string) (string, error) {
-    claims := jwt.MapClaims{
-        "user_id": userID,
-        "email":   email,
-        "role" : role,
-        "exp":     time.Now().Add(48 * time.Hour).Unix(),
-    }
+func (j *JWTManager) GenerateAccessToken(userID int, email, role string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"email":   email,
+		"role":    role,
+		"exp":     time.Now().Add(1 * time.Hour).Unix(),
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JWT_SECRET)
+	return token.SignedString(j.AccessSecret)
+}
+
+func (j *JWTManager) GenerateRefreshToken(userID int) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(j.RefreshSecret)
 }
 
 // Middleware untuk validasi token
-func AuthMiddleware() gin.HandlerFunc {
+func (j *JWTManager) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -37,7 +59,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-			return JWT_SECRET, nil
+			return j.AccessSecret, nil
 		})
 
 		if err != nil || !token.Valid {

@@ -30,6 +30,12 @@ func (r *UserRepository) Create(user models.BaseUser) error {
 	return err
 }
 
+func (r *UserRepository) UpdateLoginStatus(id int, status int) error {
+    query := `UPDATE users SET is_logged_in = ? WHERE id = ?`
+    _, err := r.DB.Exec(query, status, id)
+    return err
+}
+
 func (r *UserRepository) SaveLoginHistory(userID int, deviceInfo, ip string) error {
 	sqlQuery := `INSERT INTO login_history_user (user_id, login_at, device_info, ip_address) VALUES (?, NOW(), ?, ?)`
 	_, err := r.DB.Exec(sqlQuery, userID, deviceInfo, ip)

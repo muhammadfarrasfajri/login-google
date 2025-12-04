@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/muhammadfarrasfajri/login-google/config"
 	"github.com/muhammadfarrasfajri/login-google/controllers"
 	"github.com/muhammadfarrasfajri/login-google/database"
+	"github.com/muhammadfarrasfajri/login-google/middleware"
 	"github.com/muhammadfarrasfajri/login-google/repository"
 	routes "github.com/muhammadfarrasfajri/login-google/routers"
 	"github.com/muhammadfarrasfajri/login-google/services"
@@ -15,6 +19,14 @@ import (
 func main() {
 
 	// Init Firebase & MySQL
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: .env file not found!")
+	}
+	if os.Getenv("ACCESS_SECRET") == "" || os.Getenv("REFRESH_SECRET") == "" {
+		log.Fatal("JWT secrets must not be empty!")
+	}
+
 	config.InitFirebase()
 	database.ConnectMySQL()
 
@@ -29,14 +41,22 @@ func main() {
 		DB: database.DB,
 	}
 
+	jwtManager := &middleware.JWTManager{
+		 AccessSecret:  []byte(os.Getenv("ACCESS_SECRET")),
+		 RefreshSecret: []byte(os.Getenv("REFRESH_SECRET")),
+		}
+
 	// Services
 	authAdminService := &services.AuthService{
 		Repo: adminRepo,
 		FirebaseAuth: appAdmin,
+		JWTSecret: jwtManager,
 	}
+
 	authUserService := &services.AuthService{
 		Repo: userRepo,
 		FirebaseAuth: appUser,
+		JWTSecret: jwtManager,
 	}
 
 	userService := &services.UserService{
@@ -74,7 +94,7 @@ func main() {
 	})
 
 	// ROUTES
-	routes.SetupRoutes(r, authAdminController, authUserController, userController)
+	routes.SetupRoutes(r, authAdminController, authUserController, userController, jwtManager)
 
 	// Run server
 	r.Run(":8080")
