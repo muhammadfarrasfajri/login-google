@@ -7,4 +7,5 @@ type AuthRepository interface {
 	Create(user models.BaseUser) error
 	SaveLoginHistory(userID int, deviceInfo, ip string) error
 	UpdateLoginStatus(id int, status int) error
+	FindByID(id int) (*models.BaseUser, error)
 }

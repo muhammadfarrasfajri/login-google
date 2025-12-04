@@ -23,10 +23,10 @@ func main() {
 	if err != nil {
 		log.Println("Warning: .env file not found!")
 	}
-	if os.Getenv("ACCESS_SECRET") == "" || os.Getenv("REFRESH_SECRET") == "" {
+	if os.Getenv("JWT_SECRET") == "" || os.Getenv("REFRESH_SECRET") == "" {
 		log.Fatal("JWT secrets must not be empty!")
 	}
-
+	middleware.InitEncryptionKey()
 	config.InitFirebase()
 	database.ConnectMySQL()
 
@@ -42,7 +42,7 @@ func main() {
 	}
 
 	jwtManager := &middleware.JWTManager{
-		 AccessSecret:  []byte(os.Getenv("ACCESS_SECRET")),
+		 AccessSecret:  []byte(os.Getenv("JWT_SECRET")),
 		 RefreshSecret: []byte(os.Getenv("REFRESH_SECRET")),
 		}
 

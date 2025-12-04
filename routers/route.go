@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/muhammadfarrasfajri/login-google/controllers"
 	"github.com/muhammadfarrasfajri/login-google/middleware"
@@ -11,26 +9,26 @@ import (
 func SetupRoutes(r *gin.Engine, authAdminController *controllers.AuthController,authUserController *controllers.AuthController, userController *controllers.UserController, jwtManager *middleware.JWTManager) {
 
 	// ===========================
-	// AUTH ROUTES USERS
+	// AUTH ROUTES
 	// ===========================
 	auth := r.Group("/api/auth")
 	{
+		//auth admin
 		auth.POST("/admin/register", authAdminController.RegisterAdmin)
 		auth.POST("/admin/login", authAdminController.LoginAdmin)
-		auth.POST("/admin/logout",jwtManager.AuthMiddleware(), func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "logout success",
-			})
-		})
+		auth.POST("/admin/refresh", authAdminController.RefreshTokenAdmin)
+		auth.POST("/admin/logout", jwtManager.AuthMiddleware(), authAdminController.LogoutAdmin)
+	
+		//auth user
 		auth.POST("/user/register", authUserController.RegisterUser)
 		auth.POST("/user/login", authUserController.LoginUser)
-		auth.POST("/user/logout", jwtManager.AuthMiddleware(), func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "logout success",
-			})
-		})
+		auth.POST("/user/refresh", authUserController.RefreshTokenAdmin)
+		auth.POST("/user/logout", jwtManager.AuthMiddleware(), authUserController.LogoutUser)
 	}
 
+	// ===========================
+	// USER ROUTES
+	// ===========================
 	user := r.Group("/users", jwtManager.AuthMiddleware())
 	{
 		user.GET("/:id", userController.GetByID)
@@ -40,9 +38,7 @@ func SetupRoutes(r *gin.Engine, authAdminController *controllers.AuthController,
 	// ADMIN ROUTES
 	// ===========================
 
-
 	admin := r.Group("/admin")
-	// admin := r.Group("/admin") // sementara tanpa auth
 	{
 		admin.GET("/:id", userController.GetByID)
 		admin.GET("/users", userController.GetAll)

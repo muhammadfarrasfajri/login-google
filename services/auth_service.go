@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	firebase "firebase.google.com/go/auth"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/muhammadfarrasfajri/login-google/middleware"
 	"github.com/muhammadfarrasfajri/login-google/models"
 	"github.com/muhammadfarrasfajri/login-google/repository"
@@ -102,7 +103,7 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	}
 
 	//6. Generate Access token
-	jwtToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
+	accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +113,66 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	if err != nil {
 		return nil, err
 	}
+	//8. encryp Refresh Token
+	encryptedRefresh, err := middleware.Encrypt(refreshToken)
+	if err != nil {
+		return nil, err
+	}
 
 	return map[string]interface{}{
 		"message": "login success",
-		"token":   jwtToken,
-		"refresh": refreshToken,
+		"access_token":   accessToken,
+		"refresh_token": encryptedRefresh,
 		"user":    user,
 	}, nil
+}
+
+// -------------------------- REFRESH TOKEN ------------------------
+func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{}, error) {
+
+	refreshToken, err := middleware.Decrypt(encryptedToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// parsing token
+	token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
+		return s.JWTSecret.RefreshSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	userID := int(claims["user_id"].(float64))
+
+	// ambil user dari db
+	user, err := s.Repo.FindByID(userID)
+	if err != nil || user == nil {
+		return nil, ErrUserNotRegistered
+	}
+
+	// generate token baru (access + refresh)
+	accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	newRefreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	encryptedRefresh, err := middleware.Encrypt(newRefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": encryptedRefresh,
+	}, nil
+}
+
+func (s *AuthService) Logout(userID int) error {
+	return s.Repo.UpdateLoginStatus(userID, 0)
 }

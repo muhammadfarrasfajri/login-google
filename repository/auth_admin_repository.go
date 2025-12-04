@@ -18,7 +18,7 @@ func (r *AdminRepository) FindByGoogleUID(uid string) (*models.BaseUser, error) 
 	err := row.Scan(&admin.ID, &admin.GoogleUID, &admin.Name, &admin.Email, &admin.GooglePicture, &admin.IsLoggedIn)
 	if err != nil {
 		if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, err
 	}
 	return nil, err
 }
@@ -41,4 +41,20 @@ func (r *AdminRepository) SaveLoginHistory(adminID int, deviceInfo, ip string) e
 	sqlQuery := `INSERT INTO login_history_admin (admin_id, login_at, device_info, ip_address) VALUES (?, NOW(), ?, ?)`
 	_, err := r.DB.Exec(sqlQuery, adminID, deviceInfo, ip)
 	return err
+}
+
+func (r *AdminRepository) FindByID(id int) (*models.BaseUser, error) {
+	row := r.DB.QueryRow(`
+        SELECT id, google_uid, name, email, google_picture, role, profile_picture
+        FROM users WHERE id = ?
+    `, id)
+
+	user := models.BaseUser{}
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.GooglePicture, &user.Role, &user.ProfilePicture)
+
+	if err == sql.ErrNoRows {
+		return nil, err
+	}
+
+	return &user, err
 }

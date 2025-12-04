@@ -55,3 +55,35 @@ func (c *AuthController) LoginUser(ctx *gin.Context) {
 
     ctx.JSON(http.StatusOK, result)
 }
+
+func (c *AuthController) RefreshTokenAdmin(ctx *gin.Context) {
+	var body struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := ctx.BindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	result, err := c.AuthService.RefreshToken(body.RefreshToken)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, result)
+}
+
+func (c *AuthController) LogoutUser(ctx *gin.Context) {
+	userID := ctx.GetInt("user_id")
+
+	err := c.AuthService.Logout(userID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "logout success"})
+}
+

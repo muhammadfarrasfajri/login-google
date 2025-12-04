@@ -35,7 +35,7 @@ func (r *UserRepository) GetAll() ([]models.BaseUser, error) {
 
 // --------------------------- FIND BY ID --------------------------------------
 
-func (r *UserRepository) FindByID(id string) (*models.BaseUser, error) {
+func (r *UserRepository) FindByID(id int) (*models.BaseUser, error) {
 	row := r.DB.QueryRow(`
         SELECT id, google_uid, name, email, google_picture, role, profile_picture
         FROM users WHERE id = ?
