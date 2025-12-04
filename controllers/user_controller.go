@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -62,17 +61,19 @@ func (c *UserController) Update(ctx *gin.Context) {
 	// Ambil file kalau ada
 	file, _ := ctx.FormFile("profile_picture")
 	var filename string
+	var publicPath string
 	if file != nil {
 		filename = fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
-		savePath := fmt.Sprintf("public/uploads/images/%s", filename)
+		savePath := fmt.Sprintf("./public/uploads/images/%s", filename)
 		if err := ctx.SaveUploadedFile(file, savePath); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 			return
 		}
+		publicPath = fmt.Sprintf("/public/uploads/images/%s", filename) // ini yang dikirim ke DB
 	}
 
 	// Kirim ke service/repo
-	user, err := c.UserService.Update(id, name, email, role, filename)
+	user, err := c.UserService.Update(id, name, email, role, publicPath)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -80,8 +81,7 @@ func (c *UserController) Update(ctx *gin.Context) {
 
 	// Format URL foto
 	if user.Profile_picture != "" && !strings.HasPrefix(user.Profile_picture, "http") {
-		user.Profile_picture = fmt.Sprintf("%s/uploads/images/%s",
-			os.Getenv("BASE_URL"), user.Profile_picture)
+		user.Profile_picture = fmt.Sprintf(user.Profile_picture)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
