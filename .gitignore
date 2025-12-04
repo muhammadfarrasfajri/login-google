@@ -1,2 +1,4 @@
 firebase-key.hh
 firebase-key.json
+public/uploads/images/
+public/uploads/images/*

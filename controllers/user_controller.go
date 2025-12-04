@@ -54,12 +54,13 @@ func (c *UserController) Update(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	// Ambil form-data
-	name := ctx.PostForm("name")
-	email := ctx.PostForm("email")
-	role := ctx.PostForm("role")
+	name := ctx.PostForm("Name")
+	email := ctx.PostForm("Email")
+	role := ctx.PostForm("Role")
+	fmt.Println(id, name, email, role)
 
 	// Ambil file kalau ada
-	file, _ := ctx.FormFile("profile_picture")
+	file, _ := ctx.FormFile("Profile_picture")
 	var filename string
 	var publicPath string
 	if file != nil {
@@ -74,12 +75,13 @@ func (c *UserController) Update(ctx *gin.Context) {
 
 	// Kirim ke service/repo
 	user, err := c.UserService.Update(id, name, email, role, publicPath)
+
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Format URL foto
+	// Format URL fotoqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 	if user.Profile_picture != "" && !strings.HasPrefix(user.Profile_picture, "http") {
 		user.Profile_picture = fmt.Sprintf(user.Profile_picture)
 	}
