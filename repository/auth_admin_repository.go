@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/muhammadfarrasfajri/login-google/models"
 )
@@ -44,17 +45,14 @@ func (r *AdminRepository) SaveLoginHistory(adminID int, deviceInfo, ip string) e
 }
 
 func (r *AdminRepository) FindByID(id int) (*models.BaseUser, error) {
-	row := r.DB.QueryRow(`
-        SELECT id, google_uid, name, email, google_picture, role, profile_picture
-        FROM users WHERE id = ?
-    `, id)
-
-	user := models.BaseUser{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.GooglePicture, &user.Role, &user.ProfilePicture)
+	sqlQuery := `SELECT id, google_uid, name, email, google_picture, role FROM admins WHERE id = ?`
+	row := r.DB.QueryRow(sqlQuery, id)
+	admin := models.BaseUser{}
+	err := row.Scan(&admin.ID, &admin.GoogleUID, &admin.Name, &admin.Email, &admin.GooglePicture, &admin.Role)
 
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, errors.New("data tidak ada")
 	}
 
-	return &user, err
+	return &admin, err
 }

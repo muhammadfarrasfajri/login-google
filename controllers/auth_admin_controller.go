@@ -51,17 +51,15 @@ func (c *AuthController) LoginAdmin(ctx *gin.Context) {
     ctx.JSON(http.StatusOK, result)
 }
 
-func (c *AuthController) RefreshTokenUser(ctx *gin.Context) {
-	var body struct {
-		RefreshToken string `json:"refresh_token"`
+func (c *AuthController) RefreshTokenAdmin(ctx *gin.Context) {
+
+	refreshToken, err:= ctx.Cookie("refresh_token")
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh token"})
+        return
 	}
 
-	if err := ctx.BindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
-
-	result, err := c.AuthService.RefreshToken(body.RefreshToken)
+	result, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

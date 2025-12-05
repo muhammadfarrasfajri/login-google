@@ -139,17 +139,18 @@ func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{
 	token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
 		return s.JWTSecret.RefreshSecret, nil
 	})
+
 	if err != nil || !token.Valid {
 		return nil, ErrInvalidToken
 	}
-
+	
 	claims := token.Claims.(jwt.MapClaims)
 	userID := int(claims["user_id"].(float64))
 
 	// ambil user dari db
 	user, err := s.Repo.FindByID(userID)
 	if err != nil || user == nil {
-		return nil, ErrUserNotRegistered
+		return nil, err
 	}
 
 	// generate token baru (access + refresh)

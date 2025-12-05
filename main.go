@@ -37,14 +37,15 @@ func main() {
 	adminRepo := &repository.AdminRepository{
 		DB: database.DB,
 	}
+	
 	userRepo := &repository.UserRepository{
 		DB: database.DB,
 	}
 
 	jwtManager := &middleware.JWTManager{
-		 AccessSecret:  []byte(os.Getenv("JWT_SECRET")),
-		 RefreshSecret: []byte(os.Getenv("REFRESH_SECRET")),
-		}
+		AccessSecret:  []byte(os.Getenv("JWT_SECRET")),
+		RefreshSecret: []byte(os.Getenv("REFRESH_SECRET")),
+	}
 
 	// Services
 	authAdminService := &services.AuthService{
@@ -67,6 +68,7 @@ func main() {
 	authAdminController := &controllers.AuthController{
 		AuthService: authAdminService,
 	}
+
 	authUserController := &controllers.AuthController{
 		AuthService: authUserService,
 	}

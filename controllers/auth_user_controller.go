@@ -56,7 +56,7 @@ func (c *AuthController) LoginUser(ctx *gin.Context) {
     ctx.JSON(http.StatusOK, result)
 }
 
-func (c *AuthController) RefreshTokenAdmin(ctx *gin.Context) {
+func (c *AuthController) RefreshTokenUser(ctx *gin.Context) {
 	var body struct {
 		RefreshToken string `json:"refresh_token"`
 	}
