@@ -10,18 +10,24 @@ type UserRepository struct {
 	DB *sql.DB
 }
 
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{
+		DB: db,
+	}
+}
+
 func (r *UserRepository) FindByGoogleUID(uid string) (*models.BaseUser, error) {
-	sqlQuery := `SELECT id, google_uid, name, email, google_picture FROM users WHERE google_uid = ? LIMIT 1`
+	sqlQuery := `SELECT id, google_uid, name, email, google_picture, is_logged_in FROM users WHERE google_uid = ? LIMIT 1`
 	row := r.DB.QueryRow(sqlQuery, uid)
 	user := models.BaseUser{}
-	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.GooglePicture)
+	err := row.Scan(&user.ID, &user.GoogleUID, &user.Name, &user.Email, &user.GooglePicture, &user.IsLoggedIn)
 	if err != nil {
 		if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, err
 	}
 	return nil, err
 }
-	return &user, nil
+	return &user, err
 }
 
 func (r *UserRepository) Create(user models.BaseUser) error {

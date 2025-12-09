@@ -18,6 +18,13 @@ type UserController struct {
 	Repo        *repository.UserRepository
 }
 
+func NewUserController(userService *services.UserService, repo *repository.UserRepository) *UserController{
+	return &UserController{
+		UserService: userService,
+		Repo: repo,
+	}
+}
+
 // GET /users
 func (c *UserController) GetAll(ctx *gin.Context) {
 	users, err := c.UserService.GetAll()

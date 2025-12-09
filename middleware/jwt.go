@@ -28,7 +28,7 @@ func (j *JWTManager) GenerateAccessToken(userID int, email, role string) (string
 		"user_id": userID,
 		"email":   email,
 		"role":    role,
-		"exp":     time.Now().Add(1 * time.Hour).Unix(),
+		"exp":     time.Now().Add(40 * time.Second).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

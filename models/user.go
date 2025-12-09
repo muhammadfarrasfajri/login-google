@@ -6,7 +6,7 @@ type BaseUser struct {
 	Name           string
 	Email          string
 	GooglePicture  string
-	ProfilePicture string
+	ProfilePicture string 
 	Role           string
 	IsLoggedIn     int
 }

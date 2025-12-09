@@ -11,6 +11,12 @@ type AuthController struct {
 	AuthService *services.AuthService
 }
 
+func NewAuthController(authservice *services.AuthService) *AuthController{
+	return &AuthController{
+		AuthService: authservice,
+	}
+}
+
 func (c *AuthController) RegisterUser(ctx *gin.Context) {
 	var body struct {
 		IDToken string `json:"id_token"`
@@ -48,6 +54,7 @@ func (c *AuthController) LoginUser(ctx *gin.Context) {
     ip := ctx.ClientIP()
 
     result, err := c.AuthService.Login(req.IDToken, req.DeviceInfo, ip)
+	
     if err != nil {
         ctx.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
         return
@@ -57,16 +64,15 @@ func (c *AuthController) LoginUser(ctx *gin.Context) {
 }
 
 func (c *AuthController) RefreshTokenUser(ctx *gin.Context) {
-	var body struct {
-		RefreshToken string `json:"refresh_token"`
-	}
 
-	if err := ctx.BindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
+	refreshToken, err := ctx.Cookie("refresh_token")
 
-	result, err := c.AuthService.RefreshToken(body.RefreshToken)
+    if err != nil {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh token"})
+        return
+    }
+
+	result, err := c.AuthService.RefreshToken(refreshToken)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -76,6 +82,7 @@ func (c *AuthController) RefreshTokenUser(ctx *gin.Context) {
 }
 
 func (c *AuthController) LogoutUser(ctx *gin.Context) {
+
 	userID := ctx.GetInt("user_id")
 
 	err := c.AuthService.Logout(userID)

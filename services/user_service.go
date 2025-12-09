@@ -16,6 +16,12 @@ type UserService struct {
 	UserRepo *repository.UserRepository
 }
 
+func NewUserSevice(userRepo *repository.UserRepository) *UserService {
+	return &UserService{
+		UserRepo: userRepo,
+	}
+}
+
 // ------------------------- GET ALL USERS -----------------------------
 
 func (s *UserService) GetAll() ([]models.BaseUser, error) {

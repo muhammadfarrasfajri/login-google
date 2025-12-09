@@ -43,6 +43,7 @@ func (c *AuthController) LoginAdmin(ctx *gin.Context) {
     ip := ctx.ClientIP()
 
     result, err := c.AuthService.Login(req.IDToken, req.DeviceInfo, ip)
+	
     if err != nil {
         ctx.JSON((http.StatusBadRequest), gin.H{"error": err.Error()})
         return
@@ -53,19 +54,19 @@ func (c *AuthController) LoginAdmin(ctx *gin.Context) {
 
 func (c *AuthController) RefreshTokenAdmin(ctx *gin.Context) {
 
-	refreshToken, err:= ctx.Cookie("refresh_token")
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh token"})
+    refreshToken, err := ctx.Cookie("refresh_token")
+	
+    if err != nil {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh token"})
         return
-	}
+    }
+    result, err := c.AuthService.RefreshToken(refreshToken) 
+    if err != nil {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+        return
+    }
 
-	result, err := c.AuthService.RefreshToken(refreshToken)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, result)
+    ctx.JSON(http.StatusOK, result)
 }
 
 func (c *AuthController) LogoutAdmin(ctx *gin.Context) {

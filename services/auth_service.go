@@ -2,7 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
+	"time"
 
 	firebase "firebase.google.com/go/auth"
 	"github.com/golang-jwt/jwt/v5"
@@ -20,6 +23,14 @@ type AuthService struct {
 	Repo     repository.AuthRepository
 	FirebaseAuth *firebase.Client
 	JWTSecret    *middleware.JWTManager
+}
+
+func NewAuthService(repository repository.AuthRepository, firebaseAuth *firebase.Client, jwtsecret *middleware.JWTManager) *AuthService{
+	return &AuthService{
+		Repo: repository,
+		FirebaseAuth: firebaseAuth,
+		JWTSecret: jwtsecret,
+	}
 }
 
 // --------------------------- REGISTER -----------------------------------
@@ -113,16 +124,28 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	if err != nil {
 		return nil, err
 	}
+
 	//8. encryp Refresh Token
 	encryptedRefresh, err := middleware.Encrypt(refreshToken)
 	if err != nil {
 		return nil, err
 	}
 
+	//9. encode base64 
+	encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
+
+	//10. time exp refresh token
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+
+	//11. Send refresh token to database
+	if err := s.Repo.RefreshToken(user.ID, encodedToken, expiresAt); err != nil {
+		return nil, err
+	}
+
 	return map[string]interface{}{
 		"message": "login success",
 		"access_token":   accessToken,
-		"refresh_token": encryptedRefresh,
+		"refresh_token": encodedToken,
 		"user":    user,
 	}, nil
 }
@@ -130,9 +153,16 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 // -------------------------- REFRESH TOKEN ------------------------
 func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{}, error) {
 
-	refreshToken, err := middleware.Decrypt(encryptedToken)
+
+	decodedBytes, err := base64.URLEncoding.DecodeString(encryptedToken)
+	
 	if err != nil {
-		return nil, errors.New("invalid refresh token")
+		return nil, ErrInvalidToken
+	}
+
+	refreshToken, err := middleware.Decrypt(string(decodedBytes))
+	if err != nil {
+		return nil, ErrInvalidToken
 	}
 
 	// parsing token
@@ -146,6 +176,16 @@ func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{
 	
 	claims := token.Claims.(jwt.MapClaims)
 	userID := int(claims["user_id"].(float64))
+
+	tokenCheck, err := s.Repo.FindRefreshToken(userID)
+	fmt.Println(tokenCheck)
+	if err != nil || tokenCheck == nil {
+		return nil, errors.New("refresh token not found")
+	}
+
+	if encryptedToken != tokenCheck.RefreshToken {
+		return nil, errors.New("refresh token not match")
+	} 
 
 	// ambil user dari db
 	user, err := s.Repo.FindByID(userID)
@@ -167,13 +207,26 @@ func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{
 	if err != nil {
 		return nil, err
 	}
+	encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
+
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+
+	if err := s.Repo.UpdateRefreshToken(user.ID, encodedToken, expiresAt); err != nil {
+		return nil, err
+	}
 
 	return map[string]interface{}{
 		"access_token":  accessToken,
-		"refresh_token": encryptedRefresh,
+		"refresh_token": encodedToken,
 	}, nil
 }
 
 func (s *AuthService) Logout(userID int) error {
-	return s.Repo.UpdateLoginStatus(userID, 0)
+	if err := s.Repo.UpdateLoginStatus(userID, 0); err != nil {
+		return err
+	}
+	if err := s.Repo.DeleteRefreshToken(userID); err != nil {
+		return err
+	}
+	return nil
 }

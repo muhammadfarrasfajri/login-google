@@ -26,6 +26,7 @@ func main() {
 	if os.Getenv("JWT_SECRET") == "" || os.Getenv("REFRESH_SECRET") == "" {
 		log.Fatal("JWT secrets must not be empty!")
 	}
+	
 	middleware.InitEncryptionKey()
 	config.InitFirebase()
 	database.ConnectMySQL()
@@ -34,49 +35,25 @@ func main() {
 	appUser, _ := config.FirebaseAppUser.Auth(context.Background())
 
 	// Repository
-	adminRepo := &repository.AdminRepository{
-		DB: database.DB,
-	}
-	
-	userRepo := &repository.UserRepository{
-		DB: database.DB,
-	}
+	adminRepo := repository.NewAdminRepository(database.DB)
+	userRepo := repository.NewUserRepository(database.DB)
 
-	jwtManager := &middleware.JWTManager{
-		AccessSecret:  []byte(os.Getenv("JWT_SECRET")),
-		RefreshSecret: []byte(os.Getenv("REFRESH_SECRET")),
-	}
+	// JWT
+	jwtManager := middleware.NewJWTManager(os.Getenv("JWT_SECRET"),os.Getenv("REFRESH_SECRET"))
 
 	// Services
-	authAdminService := &services.AuthService{
-		Repo: adminRepo,
-		FirebaseAuth: appAdmin,
-		JWTSecret: jwtManager,
-	}
-
-	authUserService := &services.AuthService{
-		Repo: userRepo,
-		FirebaseAuth: appUser,
-		JWTSecret: jwtManager,
-	}
-
-	userService := &services.UserService{
-		UserRepo: userRepo,
-	}
+	//Auth Admin and User
+	authAdminService := services.NewAuthService(adminRepo, appAdmin, jwtManager)
+	authUserService := services.NewAuthService(userRepo, appUser, jwtManager)
+	//CRUD User
+	userService := services.NewUserSevice(userRepo)
 	
 	// Controller
-	authAdminController := &controllers.AuthController{
-		AuthService: authAdminService,
-	}
-
-	authUserController := &controllers.AuthController{
-		AuthService: authUserService,
-	}
-
-	userController := &controllers.UserController{
-		UserService: userService,
-		Repo:        userRepo,
-	}
+	// Auth Admin and User
+	authAdminController := controllers.NewAuthController(authAdminService)
+	authUserController := controllers.NewAuthController(authUserService)
+	//CRUD User
+	userController := controllers.NewUserController(userService, userRepo)
 
 	// Init GIN
 	r := gin.Default()
