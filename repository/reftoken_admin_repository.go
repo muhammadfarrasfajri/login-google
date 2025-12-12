@@ -14,7 +14,7 @@ func (r *AdminRepository) FindRefreshToken(adminID int) (*models.RefreshToken, e
 	admin := models.RefreshToken{}
 	err := row.Scan(&admin.ID, &admin.AdminOrUserID, &admin.RefreshToken, &admin.ExpiresAt)
 	if err == sql.ErrNoRows {
-		return nil, errors.New("data tidak ada")
+		return nil, errors.New("refresh token not found")
 	}
 	return &admin, err
 }

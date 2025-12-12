@@ -38,7 +38,7 @@ func SetupRoutes(r *gin.Engine, authAdminController *controllers.AuthController,
 	// ADMIN ROUTES
 	// ===========================
 
-	admin := r.Group("/admin")
+	admin := r.Group("/admin", jwtManager.AuthMiddleware(), middleware.AdminOnly())
 	{
 		admin.GET("/:id", userController.GetByID)
 		admin.GET("/users", userController.GetAll)

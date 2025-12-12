@@ -36,7 +36,7 @@ func (r *AdminRepository) GetAll() ([]models.BaseUser, error) {
 // --------------------------- FIND BY ID --------------------------------------
 
 // Get User Use Id
-func (r *AdminRepository) FindByID(id int) (*models.BaseUser, error) {
+func (r *AdminRepository) FindByID(id string) (*models.BaseUser, error) {
 	sqlQuery := `SELECT id, google_uid, name, email, google_picture, role FROM admins WHERE id = ?`
 	row := r.DB.QueryRow(sqlQuery, id)
 	admin := models.BaseUser{}

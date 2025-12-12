@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/muhammadfarrasfajri/login-google/models"
 	"github.com/muhammadfarrasfajri/login-google/repository"
@@ -27,7 +26,7 @@ func NewUserSevice(userRepo *repository.UserRepository) *UserService {
 func (s *UserService) GetAll() ([]models.BaseUser, error) {
 	users, err := s.UserRepo.GetAll()
 	if err != nil {
-		return nil, err
+		return nil, ErrUserNotFound
 	}
 	return users, nil
 }
@@ -35,8 +34,7 @@ func (s *UserService) GetAll() ([]models.BaseUser, error) {
 // ------------------------- GET USER BY ID ----------------------------
 
 func (s *UserService) GetByID(id string) (*models.BaseUser, error) {
-	userId, _:= strconv.Atoi(id)
-	user, err := s.UserRepo.FindByID(userId)
+	user, err := s.UserRepo.FindByID(id)
 	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
@@ -47,8 +45,7 @@ func (s *UserService) GetByID(id string) (*models.BaseUser, error) {
 
 func (s *UserService) Update(id, name, email, role, ProfilePicture string) (*models.BaseUser, error) {
 	// cek apakah user ada
-	userId, _:= strconv.Atoi(id)
-	existing, err := s.UserRepo.FindByID(userId)
+	existing, err := s.UserRepo.FindByID(id)
 	if err != nil || existing == nil {
 		return nil, ErrUserNotFound
 	}
@@ -71,8 +68,7 @@ func (s *UserService) Update(id, name, email, role, ProfilePicture string) (*mod
 
 func (s *UserService) Delete(id string) error {
 	// cek user dulu
-	userId, _:= strconv.Atoi(id)
-	user, err := s.UserRepo.FindByID(userId)
+	user, err := s.UserRepo.FindByID(id)
 	if err != nil || user == nil {
 		return ErrUserNotFound
 	}

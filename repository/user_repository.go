@@ -35,7 +35,7 @@ func (r *UserRepository) GetAll() ([]models.BaseUser, error) {
 
 // --------------------------- FIND BY ID --------------------------------------
 
-func (r *UserRepository) FindByID(id int) (*models.BaseUser, error) {
+func (r *UserRepository) FindByID(id string) (*models.BaseUser, error) {
 	row := r.DB.QueryRow(`
         SELECT id, google_uid, name, email, google_picture, role, profile_picture
         FROM users WHERE id = ?
@@ -70,14 +70,8 @@ func (r *UserRepository) Update(user models.BaseUser) error {
 // --------------------------- DELETE USER -------------------------------------
 
 func (r *UserRepository) Delete(id string) error {
-	// Hapus login history dulu
-	_, err := r.DB.Exec("DELETE FROM login_history WHERE user_id = ?", id)
-	if err != nil {
-		return err
-	}
-
 	// Baru hapus user
-	_, err = r.DB.Exec("DELETE FROM users WHERE id = ?", id)
+	_, err := r.DB.Exec("DELETE FROM users WHERE id = ?", id)
 	return err
 }
 

@@ -12,14 +12,13 @@ type AuthRepository interface {
 	SaveLoginHistory(userID int, deviceInfo, ip string) error
 	UpdateLoginStatus(id int, status int) error
 
-	// CRUD
+	//CRUD
 	FindByGoogleUID(uid string) (*models.BaseUser, error)
-	FindByID(id int) (*models.BaseUser, error)
+	FindByID(id string) (*models.BaseUser, error)
 	GetAll() ([]models.BaseUser, error)
 	Update(user models.BaseUser) error
 	Delete(id string) error
 	UpdatePhotoURL(userID int, url string) error
-	
 
 	// Refresh Token
 	RefreshToken(userID int, refreshToken string, exp time.Time) error

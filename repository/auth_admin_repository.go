@@ -37,10 +37,10 @@ func (r *AdminRepository) SaveLoginHistory(adminID int, deviceInfo, ip string) e
 }
 // Get User Use google_uid
 func (r *AdminRepository) FindByGoogleUID(uid string) (*models.BaseUser, error) {
-	sqlQuery := `SELECT id, google_uid, name, email, google_picture, is_logged_in FROM admins WHERE google_uid = ? LIMIT 1`
+	sqlQuery := `SELECT id, google_uid, name, email, google_picture, role, is_logged_in FROM admins WHERE google_uid = ? LIMIT 1`
 	row := r.DB.QueryRow(sqlQuery, uid)
 	admin := models.BaseUser{}
-	err := row.Scan(&admin.ID, &admin.GoogleUID, &admin.Name, &admin.Email, &admin.GooglePicture, &admin.IsLoggedIn)
+	err := row.Scan(&admin.ID, &admin.GoogleUID, &admin.Name, &admin.Email, &admin.GooglePicture, &admin.Role, &admin.IsLoggedIn)
 	if err != nil {
 		if err == sql.ErrNoRows {
 		return nil, err

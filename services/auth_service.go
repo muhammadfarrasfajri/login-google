@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
+	"strconv"
 	"time"
 
 	firebase "firebase.google.com/go/auth"
@@ -98,13 +98,53 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	}
 
 	// 3. Cek user login
-	if user.IsLoggedIn == 1 {
-		return nil, errors.New("user already login")
-	}
-
-	// 4. Update status login
-	if err := s.Repo.UpdateLoginStatus(user.ID, 1); err != nil {
-		return nil, err
+	_ , err = s.Repo.FindRefreshToken(user.ID)
+	if err != nil {
+		// 4. Update status login
+		if err := s.Repo.UpdateLoginStatus(user.ID, 1); err != nil {
+			return nil, err
+		}
+	
+		// 5. Simpan aktivitas login
+		err = s.Repo.SaveLoginHistory(user.ID, deviceInfo, ip)
+		if err != nil {
+			return nil, err
+		}
+	
+		//6. Generate Access token
+		accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
+		if err != nil {
+			return nil, err
+		}
+	
+		//7. Generate Referesh Token
+		refreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
+		if err != nil {
+			return nil, err
+		}
+	
+		//8. encryp Refresh Token
+		encryptedRefresh, err := middleware.Encrypt(refreshToken)
+		if err != nil {
+			return nil, err
+		}
+	
+		//9. encode base64 
+		encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
+	
+		//10. time exp refresh token
+		expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	
+		//11. Send refresh token to database
+		if err := s.Repo.RefreshToken(user.ID, encodedToken, expiresAt); err != nil {
+			return nil, err
+		}
+	
+		return map[string]interface{}{
+			"message": "login success",
+			"access_token":   accessToken,
+			"refresh_token": encodedToken,
+		}, nil
 	}
 
 	// 5. Simpan aktivitas login
@@ -112,114 +152,115 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	if err != nil {
 		return nil, err
 	}
-
+	
 	//6. Generate Access token
 	accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	//7. Generate Referesh Token
 	refreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	//8. encryp Refresh Token
 	encryptedRefresh, err := middleware.Encrypt(refreshToken)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	//9. encode base64 
 	encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
-
+	
 	//10. time exp refresh token
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-
+	
 	//11. Send refresh token to database
-	if err := s.Repo.RefreshToken(user.ID, encodedToken, expiresAt); err != nil {
+	if err := s.Repo.UpdateRefreshToken(user.ID, encodedToken, expiresAt); err != nil {
 		return nil, err
 	}
-
 	return map[string]interface{}{
 		"message": "login success",
 		"access_token":   accessToken,
 		"refresh_token": encodedToken,
-		"user":    user,
-	}, nil
+		}, nil
 }
-
-// -------------------------- REFRESH TOKEN ------------------------
+	
+	// -------------------------- REFRESH TOKEN ------------------------
 func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{}, error) {
-
-
-	decodedBytes, err := base64.URLEncoding.DecodeString(encryptedToken)
 	
-	if err != nil {
-		return nil, ErrInvalidToken
-	}
-
-	refreshToken, err := middleware.Decrypt(string(decodedBytes))
-	if err != nil {
-		return nil, ErrInvalidToken
-	}
-
-	// parsing token
-	token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
-		return s.JWTSecret.RefreshSecret, nil
-	})
-
-	if err != nil || !token.Valid {
-		return nil, ErrInvalidToken
-	}
 	
-	claims := token.Claims.(jwt.MapClaims)
-	userID := int(claims["user_id"].(float64))
-
-	tokenCheck, err := s.Repo.FindRefreshToken(userID)
-	fmt.Println(tokenCheck)
-	if err != nil || tokenCheck == nil {
-		return nil, errors.New("refresh token not found")
+		decodedBytes, err := base64.URLEncoding.DecodeString(encryptedToken)
+		
+		if err != nil {
+			return nil, ErrInvalidToken
+		}
+	
+		refreshToken, err := middleware.Decrypt(string(decodedBytes))
+		if err != nil {
+			return nil, ErrInvalidToken
+		}
+	
+		// parsing token
+		token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
+			return s.JWTSecret.RefreshSecret, nil
+		})
+	
+		if err != nil || !token.Valid {
+	
+		}
+		
+		claims := token.Claims.(jwt.MapClaims)
+		userID := int(claims["user_id"].(float64))
+	
+	
+		tokenCheck, err := s.Repo.FindRefreshToken(userID)
+	
+	
+		if err != nil || tokenCheck == nil {
+			return nil, errors.New("refresh token not found")
+		}
+	
+		if encryptedToken != tokenCheck.RefreshToken {
+			return nil, errors.New("refresh token not match")
+		} 
+	
+		// ambil user dari db
+		user, err := s.Repo.FindByID(strconv.Itoa(userID))
+		if err != nil || user == nil {
+			return nil, err
+		}
+	
+		// generate token baru (access + refresh)
+		accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
+		if err != nil {
+			return nil, err
+		}
+	
+		newRefreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
+		if err != nil {
+			return nil, err
+		}
+		encryptedRefresh, err := middleware.Encrypt(newRefreshToken)
+		if err != nil {
+			return nil, err
+		}
+		encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
+	
+		expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	
+		err = s.Repo.UpdateRefreshToken(user.ID, encodedToken, expiresAt)
+		if err != nil {
+			return nil, err
+		}
+	
+		return map[string]interface{}{
+			"access_token":  accessToken,
+			"refresh_token": encodedToken,
+		}, nil
 	}
-
-	if encryptedToken != tokenCheck.RefreshToken {
-		return nil, errors.New("refresh token not match")
-	} 
-
-	// ambil user dari db
-	user, err := s.Repo.FindByID(userID)
-	if err != nil || user == nil {
-		return nil, err
-	}
-
-	// generate token baru (access + refresh)
-	accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
-	if err != nil {
-		return nil, err
-	}
-
-	newRefreshToken, err := s.JWTSecret.GenerateRefreshToken(user.ID)
-	if err != nil {
-		return nil, err
-	}
-	encryptedRefresh, err := middleware.Encrypt(newRefreshToken)
-	if err != nil {
-		return nil, err
-	}
-	encodedToken := base64.URLEncoding.EncodeToString([]byte(encryptedRefresh))
-
-	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-
-	if err := s.Repo.UpdateRefreshToken(user.ID, encodedToken, expiresAt); err != nil {
-		return nil, err
-	}
-
-	return map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": encodedToken,
-	}, nil
-}
 
 func (s *AuthService) Logout(userID int) error {
 	if err := s.Repo.UpdateLoginStatus(userID, 0); err != nil {
