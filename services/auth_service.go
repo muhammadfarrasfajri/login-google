@@ -205,11 +205,7 @@ func (s *AuthService) RefreshToken(encryptedToken string) (map[string]interface{
 		token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
 			return s.JWTSecret.RefreshSecret, nil
 		})
-	
-		if err != nil || !token.Valid {
-	
-		}
-		
+			
 		claims := token.Claims.(jwt.MapClaims)
 		userID := int(claims["user_id"].(float64))
 	
