@@ -98,8 +98,8 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 	}
 
 	// 3. Cek user login
-	_ , err = s.Repo.FindRefreshToken(user.ID)
-	if err != nil {
+	u, err := s.Repo.FindRefreshToken(user.ID)
+	if err != nil || u == nil{
 		// 4. Update status login
 		if err := s.Repo.UpdateLoginStatus(user.ID, 1); err != nil {
 			return nil, err
@@ -146,13 +146,11 @@ func (s *AuthService) Login(idToken string, deviceInfo string, ip string) (map[s
 			"refresh_token": encodedToken,
 		}, nil
 	}
-
 	// 5. Simpan aktivitas login
 	err = s.Repo.SaveLoginHistory(user.ID, deviceInfo, ip)
 	if err != nil {
 		return nil, err
 	}
-	
 	//6. Generate Access token
 	accessToken, err := s.JWTSecret.GenerateAccessToken(user.ID, user.Email, user.Role)
 	if err != nil {
