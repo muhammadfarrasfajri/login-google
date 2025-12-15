@@ -37,6 +37,7 @@ func main() {
 		container.AuthAdminController,
 		container.AuthUserController,
 		container.UserController,
+		container.PaymentController,
 		container.JWTManager,
 	)
 

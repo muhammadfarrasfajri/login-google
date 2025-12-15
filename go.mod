@@ -10,6 +10,8 @@ require (
 	google.golang.org/api v0.231.0
 )
 
+require github.com/midtrans/midtrans-go v1.3.8 // indirect
+
 require (
 	cel.dev/expr v0.23.1 // indirect
 	cloud.google.com/go v0.121.0 // indirect

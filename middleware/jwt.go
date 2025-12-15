@@ -9,7 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-
 type JWTManager struct {
 	AccessSecret  []byte
 	RefreshSecret []byte
