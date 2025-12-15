@@ -28,7 +28,8 @@ func (c *PaymentController) CreatePayment(ctx *gin.Context) {
 	}
 
 	// Ambil User ID dari Token/Middleware (Contoh)
-	userID := ctx.GetString("email")
+	userID := ctx.GetInt("user_id")
+	// userID := strconv.Itoa(userID1)
 
 	resp, err := c.service.CreateQrisTransaction(req, userID)
 	if err != nil {

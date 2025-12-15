@@ -17,7 +17,7 @@ import (
 )
 
 type PaymentService interface {
-	CreateQrisTransaction(req models.PaymentRequest, userID string) (*models.PaymentResponse, error)
+	CreateQrisTransaction(req models.PaymentRequest, userID int) (*models.PaymentResponse, error)
 	HandleNotification(notificationPayload map[string]interface{}) error
 }
 
@@ -38,16 +38,36 @@ func NewPaymentService(repo repository.PaymentRepository) PaymentService {
 	return &paymentService{repo: repo, client: client}
 }
 
-func (s *paymentService) CreateQrisTransaction(req models.PaymentRequest, userID string) (*models.PaymentResponse, error) {
+func (s *paymentService) CreateQrisTransaction(req models.PaymentRequest, userID int) (*models.PaymentResponse, error) {
 	orderID := "ORDER-" + uuid.New().String()
 
+	// 1. Hitung Total Amount & Siapkan Data Detail
+	var grossAmount int64 = 0
+	var details []models.TransactionDetail
+
+	for _, item := range req.Items {
+		subTotal := item.Price * int64(item.Quantity)
+		grossAmount += subTotal
+
+		details = append(details, models.TransactionDetail{
+			OrderID:     orderID,
+			ProductName: item.ProductName,
+			Price:       item.Price,
+			Quantity:    item.Quantity,
+			SubTotal:    subTotal,
+		})
+	}
+
+	// 2. Request ke Midtrans (Pakai grossAmount hasil hitungan)
 	chargeReq := &coreapi.ChargeReq{
 		PaymentType: coreapi.PaymentTypeQris,
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  orderID,
-			GrossAmt: int64(req.Amount),
+			GrossAmt: grossAmount, // Total dari semua barang
 		},
 		Qris: &coreapi.QrisDetails{Acquirer: "gopay"},
+		// Optional: Kirim Item Details ke Midtrans juga agar muncul di email user
+		Items: convertToMidtransItems(details),
 	}
 
 	resp, err := s.client.ChargeTransaction(chargeReq)
@@ -67,7 +87,7 @@ func (s *paymentService) CreateQrisTransaction(req models.PaymentRequest, userID
 	tx := &models.Transaction{
 		OrderID:     orderID,
 		UserID:      userID,
-		Amount:      int64(req.Amount),
+		Amount:      grossAmount, // Gunakan hasil hitungan
 		Status:      resp.TransactionStatus,
 		PaymentType: "qris",
 		PaymentUrl:  qrImageUrl,
@@ -75,17 +95,31 @@ func (s *paymentService) CreateQrisTransaction(req models.PaymentRequest, userID
 		UpdatedAt:   now,
 	}
 
-	// Simpan via Repo (Tanpa GORM)
-	if err := s.repo.Save(tx); err != nil {
+	// 3. Simpan Header & Details ke Repo
+	if err := s.repo.Save(tx, details); err != nil {
 		return nil, err
 	}
 
 	return &models.PaymentResponse{
 		OrderID:    orderID,
-		Amount:     strconv.FormatInt(int64(req.Amount), 10),
+		Amount:     strconv.FormatInt(grossAmount, 10),
 		QRImageUrl: qrImageUrl,
 		Status:     resp.TransactionStatus,
 	}, nil
+}
+
+// Helper kecil untuk convert struct kita ke struct Midtrans (Optional)
+func convertToMidtransItems(details []models.TransactionDetail) *[]midtrans.ItemDetails {
+	var items []midtrans.ItemDetails
+	for _, d := range details {
+		items = append(items, midtrans.ItemDetails{
+			ID:    strconv.FormatInt(d.ID, 10), // atau random string
+			Name:  d.ProductName,
+			Price: d.Price,
+			Qty:   int32(d.Quantity),
+		})
+	}
+	return &items
 }
 
 func (s *paymentService) HandleNotification(payload map[string]interface{}) error {
